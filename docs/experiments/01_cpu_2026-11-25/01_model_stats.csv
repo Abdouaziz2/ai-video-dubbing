@@ -1,0 +1,5 @@
+model,parameters_M,weights_MB,gpu_peak_MB,load_s,mean_s_per_sentence,max_s_per_sentence,total_s
+Helsinki-NLP/opus-mt-fr-en,75.1,287,,18.1,0.714,1.719,17.1
+Helsinki-NLP/opus-mt-tc-big-fr-en,232.7,444,,12.4,2.176,5.377,52.2
+facebook/m2m100_418M,483.9,1846,,36.7,4.951,11.682,118.8
+facebook/nllb-200-distilled-600M,615.1,2346,,26.1,6.436,14.3,154.5

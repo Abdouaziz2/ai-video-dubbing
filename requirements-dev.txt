@@ -1,0 +1,4 @@
+# Outils de développement et d'évaluation (légers, sans modèle).
+pytest
+sacrebleu
+numpy<2

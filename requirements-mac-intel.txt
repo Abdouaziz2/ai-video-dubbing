@@ -1,0 +1,11 @@
+# Mac Intel (x86_64) : PyTorch ne publie plus de version au-delà de 2.2.2 pour cette architecture.
+# - transformers 5.x exige torch>=2.6 -> on reste sur 4.57 (dernière branche acceptant torch 2.2).
+# - torch 2.2.2 est compilé pour numpy 1.x -> numpy<2.
+# Vérifié le 25/11/2026 avec `pip install --dry-run`.
+-r requirements.txt
+torch==2.2.2
+transformers>=4.57,<4.58
+numpy<2
+# sentencepiece 0.2.3 n'a pas de wheel précompilé pour macOS x86_64 / Python 3.12
+# (pip tente alors une compilation qui échoue). 0.2.1 en a un.
+sentencepiece<0.2.2

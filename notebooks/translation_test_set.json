@@ -1,0 +1,39 @@
+{
+  "description": "Jeu de test FR -> EN pour comparer les modèles de traduction (style présentation orale). Références rédigées par Claude, à relire par l'équipe.",
+  "version": 1,
+  "sentences": [
+    {"id": 1, "category": "oral_simple", "text_fr": "Bonjour à tous et merci d'être présents aujourd'hui.", "reference_en": "Hello everyone, and thank you for being here today."},
+    {"id": 2, "category": "oral_simple", "text_fr": "Je vais vous présenter notre projet en quelques minutes.", "reference_en": "I'm going to present our project to you in a few minutes."},
+    {"id": 3, "category": "oral_simple", "text_fr": "Merci pour votre attention, nous sommes prêts à répondre à vos questions.", "reference_en": "Thank you for your attention, we are ready to answer your questions."},
+
+    {"id": 4, "category": "technique", "text_fr": "Nous utilisons Whisper pour transcrire l'audio et récupérer les horodatages.", "reference_en": "We use Whisper to transcribe the audio and retrieve the timestamps."},
+    {"id": 5, "category": "technique", "text_fr": "Le modèle a été entraîné sur des données multilingues.", "reference_en": "The model was trained on multilingual data."},
+    {"id": 6, "category": "technique", "text_fr": "La voix de synthèse est générée à partir d'un court échantillon de référence.", "reference_en": "The synthetic voice is generated from a short reference sample."},
+
+    {"id": 7, "category": "nombres_dates", "text_fr": "Le traitement d'une vidéo de deux minutes prend environ trente secondes.", "reference_en": "Processing a two-minute video takes about thirty seconds."},
+    {"id": 8, "category": "nombres_dates", "text_fr": "Le projet a commencé le 15 octobre et sera présenté en décembre.", "reference_en": "The project started on October 15 and will be presented in December."},
+
+    {"id": 9, "category": "pronom_ambigu", "text_fr": "Nous avons testé la nouvelle méthode. Elle est beaucoup plus rapide.", "reference_en": "We tested the new method. It is much faster.", "note": "Elle = la méthode -> It, pas She."},
+    {"id": 10, "category": "pronom_ambigu", "text_fr": "Elle est beaucoup plus rapide.", "reference_en": "It is much faster.", "note": "Même phrase sans contexte : le modèle doit deviner. Comparer avec l'id 9."},
+
+    {"id": 11, "category": "tu_vous", "text_fr": "Vous pouvez essayer l'application vous-mêmes.", "reference_en": "You can try the application yourselves."},
+    {"id": 12, "category": "tu_vous", "text_fr": "Tu cliques sur le bouton et tu attends quelques secondes.", "reference_en": "You click the button and wait a few seconds."},
+
+    {"id": 13, "category": "idiome", "text_fr": "Au début, on a un peu galéré avec la synchronisation.", "reference_en": "At first, we struggled a bit with the synchronization."},
+    {"id": 14, "category": "idiome", "text_fr": "Ce n'est pas la mer à boire.", "reference_en": "It's not that hard."},
+
+    {"id": 15, "category": "hesitation_orale", "text_fr": "Euh, donc, en fait, le résultat est plutôt satisfaisant.", "reference_en": "Um, so, actually, the result is fairly satisfying.", "note": "Les hésitations doivent-elles être traduites ou supprimées ? Décision à prendre en Phase 5."},
+    {"id": 16, "category": "hesitation_orale", "text_fr": "Alors voilà, on va passer à la démonstration.", "reference_en": "So, let's move on to the demonstration."},
+
+    {"id": 17, "category": "phrase_longue", "text_fr": "Afin de conserver la cohérence entre l'image et le son, nous avons dû ajuster la durée de chaque segment audio généré pour qu'elle corresponde à l'intervalle disponible dans la vidéo d'origine.", "reference_en": "To keep the image and sound consistent, we had to adjust the length of each generated audio segment so that it matches the time available in the original video."},
+
+    {"id": 18, "category": "phrase_coupee", "split_group": "A", "part": 1, "text_fr": "Le projet que nous avons", "reference_en": "The project that we"},
+    {"id": 19, "category": "phrase_coupee", "split_group": "A", "part": 2, "text_fr": "présenté hier est maintenant terminé.", "reference_en": "presented yesterday is now finished."},
+    {"id": 20, "category": "phrase_coupee", "split_group": "A", "part": 0, "text_fr": "Le projet que nous avons présenté hier est maintenant terminé.", "reference_en": "The project that we presented yesterday is now finished.", "note": "Phrase complète, pour comparer avec les ids 18 + 19 traduits séparément."},
+    {"id": 21, "category": "phrase_coupee", "split_group": "B", "part": 1, "text_fr": "Si la traduction est trop longue,", "reference_en": "If the translation is too long,"},
+    {"id": 22, "category": "phrase_coupee", "split_group": "B", "part": 2, "text_fr": "la voix risque de dépasser la fin du segment.", "reference_en": "the voice may run past the end of the segment."},
+    {"id": 23, "category": "phrase_coupee", "split_group": "B", "part": 0, "text_fr": "Si la traduction est trop longue, la voix risque de dépasser la fin du segment.", "reference_en": "If the translation is too long, the voice may run past the end of the segment.", "note": "Phrase complète, pour comparer avec les ids 21 + 22."},
+
+    {"id": 24, "category": "nom_propre", "text_fr": "Abdou Aziz s'occupe de la transcription et Baye Serigne de la voix.", "reference_en": "Abdou Aziz handles the transcription and Baye Serigne handles the voice.", "note": "Les noms ne doivent pas être traduits ni déformés."}
+  ]
+}

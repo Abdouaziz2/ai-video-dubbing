@@ -1,0 +1,35 @@
+{
+  "date_utc": "2026-11-25T14:49:14+00:00",
+  "python": "3.13.18",
+  "torch": "2.14.1+cpu",
+  "transformers": "5.22.1",
+  "device": "cpu",
+  "gpu": null,
+  "generation_params": {
+    "num_beams": 4,
+    "max_new_tokens": 256
+  },
+  "models": [
+    {
+      "name": "Helsinki-NLP/opus-mt-fr-en",
+      "src_lang": null,
+      "tgt_lang_token": null
+    },
+    {
+      "name": "Helsinki-NLP/opus-mt-tc-big-fr-en",
+      "src_lang": null,
+      "tgt_lang_token": null
+    },
+    {
+      "name": "facebook/m2m100_418M",
+      "src_lang": "fr",
+      "tgt_lang_token": "__en__"
+    },
+    {
+      "name": "facebook/nllb-200-distilled-600M",
+      "src_lang": "fra_Latn",
+      "tgt_lang_token": "eng_Latn"
+    }
+  ],
+  "test_set_version": 1
+}

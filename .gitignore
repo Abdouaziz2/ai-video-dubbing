@@ -56,3 +56,24 @@ downloads/
 *.swo
 .DS_Store
 Thumbs.db
+
+# --- Ajouts Phase 1 (Massamba) ---
+# Données du pipeline : on garde les dossiers, pas leur contenu
+data/input/*
+data/intermediate/*
+data/output/*
+!data/*/.gitkeep
+!data/output/
+
+# Poids de modèles et caches
+*.pt
+*.pth
+*.bin
+*.safetensors
+*.onnx
+*.ckpt
+.cache/
+
+# Jupyter / tests
+.ipynb_checkpoints/
+.pytest_cache/
