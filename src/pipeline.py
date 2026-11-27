@@ -36,6 +36,11 @@ from src.voice import generate_segment_audio, measure_speech_rate
 # Une transcription qui dépasse la vidéo de plus de 0,5 s ne correspond pas à cette vidéo.
 TIMESTAMP_TOLERANCE = 0.5
 DEFAULT_WHISPER_MODEL = "base"
+# Whisper sur processeur par défaut : sur Colab GPU, faster-whisper (ctranslate2) cherche une
+# bibliothèque CUDA 12 absente (« libcublas.so.12 is not found »). Le modèle base est rapide
+# sur CPU pour une vidéo courte ; le GPU reste disponible pour la voix XTTS-v2.
+# "auto" utilise le GPU si l'installation CUDA est compatible.
+DEFAULT_WHISPER_DEVICE = "cpu"
 
 
 def run_in_separate_process(function, *args):
@@ -51,18 +56,21 @@ def run_in_separate_process(function, *args):
         return executor.submit(function, *args).result()
 
 
-def _extract_and_transcribe(video_path, output_dir, whisper_model):
+def _extract_and_transcribe(video_path, output_dir, whisper_model, whisper_device):
     """Modules d'Abdou Aziz : vidéo -> WAV 16 kHz -> transcription JSON (contrat partie 1)."""
     output_dir = Path(output_dir)
     audio_path = extract_audio_from_video(video_path, output_dir / "audio_fr.wav")
     transcription_json = output_dir / "transcription.json"
-    transcribe_audio(audio_path, transcription_json, model_size=whisper_model, language="fr")
+    transcribe_audio(audio_path, transcription_json, model_size=whisper_model, language="fr",
+                     device=whisper_device)
     return transcription_json
 
 
-def transcribe_video(video_path, output_dir, whisper_model=DEFAULT_WHISPER_MODEL):
+def transcribe_video(video_path, output_dir, whisper_model=DEFAULT_WHISPER_MODEL,
+                     whisper_device=DEFAULT_WHISPER_DEVICE):
     """Étape 1 : extraction + transcription Whisper, isolées dans un processus séparé."""
-    return run_in_separate_process(_extract_and_transcribe, str(video_path), str(output_dir), whisper_model)
+    return run_in_separate_process(_extract_and_transcribe, str(video_path), str(output_dir),
+                                   whisper_model, whisper_device)
 
 
 def check_transcription_matches_video(segments, video_duration):
@@ -74,7 +82,7 @@ def check_transcription_matches_video(segments, video_duration):
 
 def prepare_translation(video_path, transcription_json, output_dir, translator,
                         chars_per_second=DEFAULT_CHARS_PER_SECOND, num_candidates=4, log=print,
-                        whisper_model=DEFAULT_WHISPER_MODEL):
+                        whisper_model=DEFAULT_WHISPER_MODEL, whisper_device=DEFAULT_WHISPER_DEVICE):
     """Partie 1 (étapes 1-2) : transcription, traduction, adaptation, propositions pour la relecture.
 
     transcription_json=None : la transcription est faite par Whisper (modules d'Abdou Aziz).
@@ -86,7 +94,7 @@ def prepare_translation(video_path, transcription_json, output_dir, translator,
 
     if transcription_json is None:
         log(f"1/5 Extraction audio et transcription Whisper ({whisper_model})")
-        transcription_json = transcribe_video(video_path, output_dir, whisper_model)
+        transcription_json = transcribe_video(video_path, output_dir, whisper_model, whisper_device)
     else:
         log("1/5 Lecture de la transcription fournie")
     segments = load_segments(transcription_json)
@@ -143,13 +151,14 @@ def produce_dubbed_video(video_path, segments, output_dir, voice, log=print):
 
 def run_dubbing_pipeline(video_path, transcription_json, output_dir, translator, voice,
                          chars_per_second=DEFAULT_CHARS_PER_SECOND, log=print,
-                         whisper_model=DEFAULT_WHISPER_MODEL):
+                         whisper_model=DEFAULT_WHISPER_MODEL, whisper_device=DEFAULT_WHISPER_DEVICE):
     """Pipeline complet SANS relecture humaine (ligne de commande, tests).
 
     transcription_json=None : transcription automatique par Whisper.
     """
     segments = prepare_translation(video_path, transcription_json, output_dir, translator,
-                                   chars_per_second, num_candidates=0, log=log, whisper_model=whisper_model)
+                                   chars_per_second, num_candidates=0, log=log,
+                                   whisper_model=whisper_model, whisper_device=whisper_device)
     return produce_dubbed_video(video_path, segments, output_dir, voice, log=log)
 
 
@@ -175,6 +184,7 @@ def main():
     parser.add_argument("--transcription", default=None,
                         help="JSON de transcription (contrat partie 1). Sans cette option : Whisper.")
     parser.add_argument("--whisper-model", default=DEFAULT_WHISPER_MODEL, help="tiny, base, small...")
+    parser.add_argument("--whisper-device", default=DEFAULT_WHISPER_DEVICE, choices=["cpu", "cuda", "auto"])
     parser.add_argument("--voice", choices=["macos-test", "xtts"], default="macos-test",
                         help="macos-test = voix système NON clonée, pour tester ; xtts = voix clonée")
     parser.add_argument("--reference", help="WAV de la voix de référence (obligatoire avec xtts)")
@@ -189,7 +199,7 @@ def main():
 
     summary = run_dubbing_pipeline(args.video, args.transcription, args.output_dir or default_output_dir(),
                                    translator, voice, chars_per_second=args.chars_per_second,
-                                   whisper_model=args.whisper_model)
+                                   whisper_model=args.whisper_model, whisper_device=args.whisper_device)
     print(f"Débit mesuré de la voix : {summary['measured_chars_per_second']} caractères/s")
     print(f"À relire (texte trop long estimé) : {summary['segments_needing_review']}")
     print(f"Encore trop longs après accélération : {summary['segments_still_too_long']}")

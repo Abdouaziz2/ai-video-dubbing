@@ -125,8 +125,8 @@ def test_pipeline_without_json_calls_extraction_and_whisper(tmp_path, video, mon
         calls.append(("extract", str(video_path)))
         return output_audio_path
 
-    def fake_transcribe(audio_path, output_json_path, model_size, language):
-        calls.append(("transcribe", model_size, language))
+    def fake_transcribe(audio_path, output_json_path, model_size, language, device):
+        calls.append(("transcribe", model_size, language, device))
         write_transcription(tmp_path, [{"id": 1, "start": 0.0, "end": 2.0, "text": "Bonjour à tous."}])
         (tmp_path / "transcription.json").replace(output_json_path)
 
@@ -138,7 +138,7 @@ def test_pipeline_without_json_calls_extraction_and_whisper(tmp_path, video, mon
     summary = run_dubbing_pipeline(video, None, tmp_path / "out", FakeTranslator(), FakeVoice(),
                                    log=print, whisper_model="small")
 
-    assert calls == [("extract", str(video)), ("transcribe", "small", "fr")]
+    assert calls == [("extract", str(video)), ("transcribe", "small", "fr", "cpu")]  # CPU par défaut
     assert (tmp_path / "out" / "transcription.json").is_file()
     assert summary["segments"][0]["translated_text"] == "Hello everyone."
 
