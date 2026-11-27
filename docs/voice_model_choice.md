@@ -11,6 +11,7 @@ voix à partir d'un court échantillon (environ 10 à 30 s) sans entraînement, 
 |---|---|---|
 | Paquet | `coqui-tts` 0.28.0 (fork maintenu de Coqui TTS), code MPL-2.0 | PyPI |
 | Compatibilité | Python 3.10 à 3.14, torch>=2.2, transformers>=4.57 | métadonnées PyPI |
+| **Mac Intel** | **non installable** : la dépendance `monotonic-alignment-search` n'a pas de version précompilée pour macOS x86_64 → XTTS-v2 tourne sur Colab (`notebooks/04_full_pipeline.ipynb`) | `pip install --dry-run`, 27/11/2026 |
 | Taille | `model.pth` 1,87 Go + `dvae.pth` 0,21 Go ≈ **2,1 Go** | Hugging Face `coqui/XTTS-v2` |
 | **Licence du modèle** | Coqui Public Model License 1.0.0 : **usage non commercial uniquement** ; toute personne qui reçoit une sortie doit aussi recevoir l'adresse de la licence | `LICENSE.txt` du dépôt Hugging Face |
 

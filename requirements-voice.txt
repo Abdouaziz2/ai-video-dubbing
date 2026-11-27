@@ -1,7 +1,8 @@
 # Voix clonée XTTS-v2 (à installer seulement après avoir lu la licence du modèle :
 # Coqui Public Model License, usage non commercial — https://coqui.ai/cpml.txt).
 # Le modèle téléchargé au premier lancement fait environ 2,1 Go.
-# Testé d'abord sur Colab (notebooks/05_voice_xtts.ipynb). Sur Mac Intel, compatibilité
-# théorique (coqui-tts 0.28 demande torch>=2.2, transformers>=4.57) mais NON testée.
+# NE S'INSTALLE PAS sur Mac Intel : la dépendance monotonic-alignment-search n'a pas de
+# version précompilée pour macOS x86_64 (vérifié le 27/11/2026). Utiliser Colab
+# (notebooks/04_full_pipeline.ipynb, 05_voice_xtts.ipynb), Linux, Windows ou Mac Apple Silicon.
 -r requirements.txt
 coqui-tts
