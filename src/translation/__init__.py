@@ -1,3 +1,4 @@
 from .dubbing_adaptation import adapt_segments_for_dubbing, apply_shortening_rules, estimate_speech_duration
+from .manual_review import add_alternative_translations, apply_manual_edits
 from .text_translation import DEFAULT_MODEL_NAME, HuggingFaceTranslator, translate_segments
 from .translation_utils import load_segments, save_segments, validate_transcription_segments
