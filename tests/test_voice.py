@@ -215,3 +215,9 @@ def test_invalid_media_file_is_rejected(tmp_path):
     fake_video.write_text("ceci n'est pas une vidéo")
     with pytest.raises(ValueError, match="Durée illisible"):
         get_media_duration(fake_video)
+
+
+def test_macos_test_voice_gives_clear_error_without_say(monkeypatch):
+    monkeypatch.setattr("src.voice.voice_cloning.shutil.which", lambda name: None)  # comme sur Colab
+    with pytest.raises(RuntimeError, match="XTTS-v2"):
+        MacOSTestVoice()

@@ -12,6 +12,7 @@ Deux voix sont disponibles, avec la même méthode `synthesize(text, output_path
 qui permet de tester sans modèle (même principe que `translate_segments`).
 """
 import os
+import shutil
 import subprocess
 import tempfile
 from pathlib import Path
@@ -64,6 +65,9 @@ class MacOSTestVoice:
     notice = f"{SYNTHETIC_VOICE_NOTICE} Voix de test macOS, non clonée."
 
     def __init__(self, voice_name="Samantha"):
+        if shutil.which("say") is None:
+            raise RuntimeError("La voix de test macOS n'existe que sur Mac (commande `say`). "
+                               "Sur Colab, Linux ou Windows, choisir la voix XTTS-v2.")
         self.voice_name = voice_name
 
     def synthesize(self, text, output_path):

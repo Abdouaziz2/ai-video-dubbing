@@ -13,6 +13,8 @@ Déroulement en deux temps :
 Transcription : automatique avec Whisper (modules d'Abdou Aziz), ou fichier JSON fourni
 (par exemple une transcription corrigée à la main).
 """
+import sys
+
 import gradio as gr
 
 from src.pipeline import build_voice, default_output_dir, prepare_translation, produce_dubbed_video
@@ -22,6 +24,8 @@ VOICE_CHOICES = {
     "Voix de test macOS (NON clonée, pour tester la chaîne)": "macos-test",
     "XTTS-v2 : voix clonée (échantillon autorisé obligatoire)": "xtts",
 }
+# La voix de test macOS n'existe que sur Mac : ailleurs (Colab...), XTTS-v2 est proposé par défaut.
+DEFAULT_VOICE_LABEL = list(VOICE_CHOICES)[0 if sys.platform == "darwin" else 1]
 REVIEW_COLUMNS = ["id", "start", "end", "original_text", "translated_text", "dubbing_text",
                   "à relire", "autres propositions"]
 EDITABLE_COLUMN = REVIEW_COLUMNS.index("dubbing_text")
@@ -131,7 +135,7 @@ with gr.Blocks(title="AI Video Dubbing FR → EN") as demo:
     gr.Markdown("## Étape 2 — Voix et vidéo")
     with gr.Row():
         with gr.Column():
-            voice_input = gr.Radio(list(VOICE_CHOICES), value=list(VOICE_CHOICES)[0], label="Voix")
+            voice_input = gr.Radio(list(VOICE_CHOICES), value=DEFAULT_VOICE_LABEL, label="Voix")
             reference_input = gr.Audio(label="Voix de référence (10 à 30 s, pour XTTS-v2)",
                                        sources=["upload", "microphone"], type="filepath")
             consent_input = gr.Checkbox(label="La personne dont la voix est clonée a donné son accord écrit")
