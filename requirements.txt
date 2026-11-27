@@ -1,7 +1,19 @@
-# Dépendances communes du module de traduction (Mac et Colab).
+# Dépendances communes (Mac et Colab).
 # Sur Colab, torch est déjà installé : `pip install -r requirements.txt` suffit.
 # Sur Mac Intel : utiliser requirements-mac-intel.txt (versions imposées).
+
+# Traduction
 torch>=2.2
 transformers>=4.57
 sentencepiece
 sacremoses
+
+# Synchronisation et vidéo : FFmpeg est fourni par imageio-ffmpeg (binaire inclus, ~27 Mo).
+imageio-ffmpeg
+numpy
+
+# Interface
+gradio
+
+# Voix clonée XTTS-v2 : NON incluse ici (lourde, licence non commerciale à accepter).
+# Voir requirements-voice.txt et notebooks/05_voice_xtts.ipynb.

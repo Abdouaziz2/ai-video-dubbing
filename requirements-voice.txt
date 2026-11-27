@@ -1,0 +1,7 @@
+# Voix clonée XTTS-v2 (à installer seulement après avoir lu la licence du modèle :
+# Coqui Public Model License, usage non commercial — https://coqui.ai/cpml.txt).
+# Le modèle téléchargé au premier lancement fait environ 2,1 Go.
+# Testé d'abord sur Colab (notebooks/05_voice_xtts.ipynb). Sur Mac Intel, compatibilité
+# théorique (coqui-tts 0.28 demande torch>=2.2, transformers>=4.57) mais NON testée.
+-r requirements.txt
+coqui-tts

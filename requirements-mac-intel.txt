@@ -9,3 +9,6 @@ numpy<2
 # sentencepiece 0.2.3 n'a pas de wheel précompilé pour macOS x86_64 / Python 3.12
 # (pip tente alors une compilation qui échoue). 0.2.1 en a un.
 sentencepiece<0.2.2
+# gradio >= 6.21 exige huggingface_hub>=1.16, incompatible avec transformers 4.57 (hub<1.0).
+# 6.17.3 est la dernière version compatible (vérifié le 26/11/2026).
+gradio==6.17.3
