@@ -115,3 +115,39 @@ def test_pipeline_with_human_review(tmp_path, video):
     assert summary["segments_edited"] == [2]
     assert summary["segments_still_too_long"] == []
     assert (tmp_path / "out" / "translation_reviewed.json").is_file()
+
+
+def test_pipeline_without_json_calls_extraction_and_whisper(tmp_path, video, monkeypatch):
+    """Sans JSON, le pipeline appelle les modules d'Abdou Aziz (simulés ici : pas de modèle Whisper)."""
+    calls = []
+
+    def fake_extract(video_path, output_audio_path):
+        calls.append(("extract", str(video_path)))
+        return output_audio_path
+
+    def fake_transcribe(audio_path, output_json_path, model_size, language):
+        calls.append(("transcribe", model_size, language))
+        write_transcription(tmp_path, [{"id": 1, "start": 0.0, "end": 2.0, "text": "Bonjour à tous."}])
+        (tmp_path / "transcription.json").replace(output_json_path)
+
+    monkeypatch.setattr("src.pipeline.extract_audio_from_video", fake_extract)
+    monkeypatch.setattr("src.pipeline.transcribe_audio", fake_transcribe)
+    # Les faux modules n'existent que dans ce processus : on exécute ici au lieu d'un processus séparé.
+    monkeypatch.setattr("src.pipeline.run_in_separate_process", lambda function, *args: function(*args))
+
+    summary = run_dubbing_pipeline(video, None, tmp_path / "out", FakeTranslator(), FakeVoice(),
+                                   log=print, whisper_model="small")
+
+    assert calls == [("extract", str(video)), ("transcribe", "small", "fr")]
+    assert (tmp_path / "out" / "transcription.json").is_file()
+    assert summary["segments"][0]["translated_text"] == "Hello everyone."
+
+
+def test_run_in_separate_process_returns_result_and_raises_errors():
+    import math
+
+    from src.pipeline import run_in_separate_process
+
+    assert run_in_separate_process(math.sqrt, 16) == 4.0
+    with pytest.raises(ValueError):          # l'erreur de l'autre processus remonte ici
+        run_in_separate_process(math.sqrt, -1)

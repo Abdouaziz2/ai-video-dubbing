@@ -1,8 +1,8 @@
 """Orchestration du doublage complet : vidéo française -> vidéo doublée en anglais.
 
 Étapes et responsables :
-  1. Extraction audio + transcription Whisper ... Abdou Aziz — PAS ENCORE INTÉGRÉ :
-     en attendant, la transcription est fournie sous forme de fichier JSON (contrat partie 1).
+  1. Extraction audio + transcription Whisper ... Abdou Aziz (src/extraction, src/transcription)
+     -> ou transcription fournie en JSON (contrat partie 1), par exemple corrigée à la main.
   2. Traduction + adaptation au doublage ....... Massamba (src/translation)
      -> pause possible : relecture humaine des segments signalés (interface Gradio)
   3. Voix anglaise, un audio par segment ....... src/voice
@@ -13,24 +13,56 @@ Chaque étape écrit ses résultats dans output_dir : en cas d'erreur, on voit j
 pipeline est allé, et la voix (l'étape la plus lente) reprend là où elle s'était arrêtée.
 
 Utilisation en ligne de commande (depuis la racine du projet) :
-    python -m src.pipeline --video data/input/video.mp4 \
-        --transcription data/intermediate/transcription.json --voice macos-test
+    python -m src.pipeline --video data/input/video.mp4 --voice macos-test
+    (ajouter --transcription fichier.json pour ne pas lancer Whisper)
 """
 import argparse
+import multiprocessing
+from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
 from pathlib import Path
 
+from src.extraction import extract_audio_from_video
 from src.ffmpeg_utils import get_media_duration
 from src.synchronization import align_segments, build_audio_track
 from src.translation import (adapt_segments_for_dubbing, add_alternative_translations, load_segments,
                              save_segments, translate_segments, validate_transcription_segments)
 from src.translation.manual_review import MANUAL_EDIT_LABEL
+from src.transcription import transcribe_audio
 from src.translation.dubbing_adaptation import DEFAULT_CHARS_PER_SECOND
 from src.video import SYNTHETIC_VOICE_NOTICE, replace_audio_track
 from src.voice import generate_segment_audio, measure_speech_rate
 
 # Une transcription qui dépasse la vidéo de plus de 0,5 s ne correspond pas à cette vidéo.
 TIMESTAMP_TOLERANCE = 0.5
+DEFAULT_WHISPER_MODEL = "base"
+
+
+def run_in_separate_process(function, *args):
+    """Exécute function(*args) dans un nouveau processus Python et retourne son résultat.
+
+    Pourquoi : sur Mac Intel, faster-whisper (ctranslate2) et PyTorch embarquent chacun leur
+    propre copie de la bibliothèque OpenMP ; les deux dans le même programme provoquent un arrêt
+    brutal (« OMP: Error #15 »). Dans un processus séparé, ils ne se rencontrent jamais.
+    Une exception levée dans l'autre processus est relancée ici, avec son message.
+    """
+    spawn_context = multiprocessing.get_context("spawn")  # processus neuf : rien n'est déjà chargé
+    with ProcessPoolExecutor(max_workers=1, mp_context=spawn_context) as executor:
+        return executor.submit(function, *args).result()
+
+
+def _extract_and_transcribe(video_path, output_dir, whisper_model):
+    """Modules d'Abdou Aziz : vidéo -> WAV 16 kHz -> transcription JSON (contrat partie 1)."""
+    output_dir = Path(output_dir)
+    audio_path = extract_audio_from_video(video_path, output_dir / "audio_fr.wav")
+    transcription_json = output_dir / "transcription.json"
+    transcribe_audio(audio_path, transcription_json, model_size=whisper_model, language="fr")
+    return transcription_json
+
+
+def transcribe_video(video_path, output_dir, whisper_model=DEFAULT_WHISPER_MODEL):
+    """Étape 1 : extraction + transcription Whisper, isolées dans un processus séparé."""
+    return run_in_separate_process(_extract_and_transcribe, str(video_path), str(output_dir), whisper_model)
 
 
 def check_transcription_matches_video(segments, video_duration):
@@ -41,16 +73,22 @@ def check_transcription_matches_video(segments, video_duration):
 
 
 def prepare_translation(video_path, transcription_json, output_dir, translator,
-                        chars_per_second=DEFAULT_CHARS_PER_SECOND, num_candidates=4, log=print):
-    """Partie 1 (étapes 1-2) : lecture, traduction, adaptation, propositions pour la relecture.
+                        chars_per_second=DEFAULT_CHARS_PER_SECOND, num_candidates=4, log=print,
+                        whisper_model=DEFAULT_WHISPER_MODEL):
+    """Partie 1 (étapes 1-2) : transcription, traduction, adaptation, propositions pour la relecture.
 
+    transcription_json=None : la transcription est faite par Whisper (modules d'Abdou Aziz).
     Retourne les segments traduits. Ils peuvent être corrigés (apply_manual_edits) avant
     d'être passés à produce_dubbed_video. num_candidates=0 : pas de propositions.
     """
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    log("1/5 Lecture de la transcription et de la vidéo")
+    if transcription_json is None:
+        log(f"1/5 Extraction audio et transcription Whisper ({whisper_model})")
+        transcription_json = transcribe_video(video_path, output_dir, whisper_model)
+    else:
+        log("1/5 Lecture de la transcription fournie")
     segments = load_segments(transcription_json)
     validate_transcription_segments(segments)
     check_transcription_matches_video(segments, get_media_duration(video_path))  # avant les étapes lentes
@@ -104,10 +142,14 @@ def produce_dubbed_video(video_path, segments, output_dir, voice, log=print):
 
 
 def run_dubbing_pipeline(video_path, transcription_json, output_dir, translator, voice,
-                         chars_per_second=DEFAULT_CHARS_PER_SECOND, log=print):
-    """Pipeline complet SANS relecture humaine (ligne de commande, tests)."""
+                         chars_per_second=DEFAULT_CHARS_PER_SECOND, log=print,
+                         whisper_model=DEFAULT_WHISPER_MODEL):
+    """Pipeline complet SANS relecture humaine (ligne de commande, tests).
+
+    transcription_json=None : transcription automatique par Whisper.
+    """
     segments = prepare_translation(video_path, transcription_json, output_dir, translator,
-                                   chars_per_second, num_candidates=0, log=log)
+                                   chars_per_second, num_candidates=0, log=log, whisper_model=whisper_model)
     return produce_dubbed_video(video_path, segments, output_dir, voice, log=log)
 
 
@@ -130,7 +172,9 @@ def build_voice(voice_name, reference_wav=None):
 def main():
     parser = argparse.ArgumentParser(description="Doublage FR -> EN d'une vidéo.")
     parser.add_argument("--video", required=True)
-    parser.add_argument("--transcription", required=True, help="JSON de transcription (contrat partie 1)")
+    parser.add_argument("--transcription", default=None,
+                        help="JSON de transcription (contrat partie 1). Sans cette option : Whisper.")
+    parser.add_argument("--whisper-model", default=DEFAULT_WHISPER_MODEL, help="tiny, base, small...")
     parser.add_argument("--voice", choices=["macos-test", "xtts"], default="macos-test",
                         help="macos-test = voix système NON clonée, pour tester ; xtts = voix clonée")
     parser.add_argument("--reference", help="WAV de la voix de référence (obligatoire avec xtts)")
@@ -144,7 +188,8 @@ def main():
     translator = HuggingFaceTranslator()
 
     summary = run_dubbing_pipeline(args.video, args.transcription, args.output_dir or default_output_dir(),
-                                   translator, voice, chars_per_second=args.chars_per_second)
+                                   translator, voice, chars_per_second=args.chars_per_second,
+                                   whisper_model=args.whisper_model)
     print(f"Débit mesuré de la voix : {summary['measured_chars_per_second']} caractères/s")
     print(f"À relire (texte trop long estimé) : {summary['segments_needing_review']}")
     print(f"Encore trop longs après accélération : {summary['segments_still_too_long']}")

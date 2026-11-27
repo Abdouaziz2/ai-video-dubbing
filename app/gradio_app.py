@@ -10,7 +10,8 @@ Déroulement en deux temps :
   2. Le relecteur corrige si besoin la colonne `dubbing_text` (seule colonne modifiable).
   3. « Générer la voix et la vidéo » : voix, synchronisation, assemblage avec les textes relus.
 
-La transcription est fournie en JSON en attendant l'intégration du module Whisper d'Abdou Aziz.
+Transcription : automatique avec Whisper (modules d'Abdou Aziz), ou fichier JSON fourni
+(par exemple une transcription corrigée à la main).
 """
 import gradio as gr
 
@@ -45,22 +46,23 @@ def review_rows(segments):
             for s in segments]
 
 
-def translate_step(video_path, transcription_path, progress=gr.Progress()):
+def translate_step(video_path, transcription_path, whisper_model, progress=gr.Progress()):
     if not video_path:
         raise gr.Error("Ajoutez une vidéo.")
-    if not transcription_path:
-        raise gr.Error("Ajoutez le fichier JSON de transcription.")
 
     progress(0.1, desc="Chargement du modèle de traduction (≈ 20 s la première fois)")
     translator = get_translator()
     output_dir = default_output_dir()
-    progress(0.4, desc="Traduction en cours")
-    # Les erreurs (JSON invalide, vidéo illisible...) ne sont pas interceptées :
+    # transcription_path vide (None) : Whisper transcrit la vidéo.
+    # Les erreurs (JSON invalide, vidéo illisible, FFmpeg absent...) ne sont pas interceptées :
     # Gradio affiche leur message (show_error=True) et le détail reste dans le terminal.
-    segments = prepare_translation(video_path, transcription_path, output_dir, translator, num_candidates=4)
+    segments = prepare_translation(video_path, transcription_path or None, output_dir, translator,
+                                   num_candidates=4, whisper_model=whisper_model,
+                                   log=lambda message: progress(None, desc=message))
 
     flagged = [s["id"] for s in segments if s["needs_review"]]
-    message = (f"{len(segments)} segments traduits. "
+    source = "fichier JSON fourni" if transcription_path else f"Whisper ({whisper_model})"
+    message = (f"Transcription : {source}. {len(segments)} segments traduits. "
                + (f"À relire (texte estimé trop long) : {flagged}. Les propositions sont dans la dernière colonne."
                   if flagged else "Aucun segment signalé.")
                + "\nVous pouvez modifier la colonne dubbing_text, puis lancer l'étape 2.")
@@ -114,7 +116,11 @@ with gr.Blocks(title="AI Video Dubbing FR → EN") as demo:
     gr.Markdown("## Étape 1 — Traduction")
     with gr.Row():
         video_input = gr.Video(label="Vidéo en français", sources=["upload"])
-        transcription_input = gr.File(label="Transcription JSON (contrat partie 1)", file_types=[".json"])
+        with gr.Column():
+            transcription_input = gr.File(label="Transcription JSON (facultatif : sinon Whisper transcrit la vidéo)",
+                                          file_types=[".json"])
+            whisper_input = gr.Radio(["tiny", "base", "small"], value="base",
+                                     label="Modèle Whisper (si pas de JSON) : small = plus précis mais plus lent")
     translate_button = gr.Button("1. Traduire", variant="primary")
     translate_message = gr.Textbox(label="Résultat de la traduction", lines=3)
 
@@ -135,7 +141,7 @@ with gr.Blocks(title="AI Video Dubbing FR → EN") as demo:
             report_output = gr.Textbox(label="Compte rendu", lines=7)
     result_table = gr.Dataframe(headers=RESULT_COLUMNS, label="Synchronisation par segment", wrap=True)
 
-    translate_button.click(translate_step, inputs=[video_input, transcription_input],
+    translate_button.click(translate_step, inputs=[video_input, transcription_input, whisper_input],
                            outputs=[review_table, translate_message, pipeline_state])
     dub_button.click(dub_step,
                      inputs=[pipeline_state, review_table, voice_input, reference_input, consent_input],

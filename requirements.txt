@@ -4,6 +4,9 @@
 
 # Transcription (Abdou Aziz)
 faster-whisper
+# av 19 a retiré une option utilisée par faster-whisper 1.2.1 (« metadata_errors ») :
+# la transcription plante. av 17 et 18 fonctionnent (vérifié le 27/11/2026).
+av<19
 
 # Traduction
 torch>=2.2
