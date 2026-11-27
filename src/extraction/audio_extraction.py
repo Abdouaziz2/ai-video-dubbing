@@ -2,6 +2,8 @@
 import subprocess
 from pathlib import Path
 
+from src.ffmpeg_utils import get_ffmpeg_path
+
 
 def extract_audio_from_video(video_path, output_audio_path):
     """Extrait l'audio et retourne le chemin WAV créé.
@@ -19,7 +21,8 @@ def extract_audio_from_video(video_path, output_audio_path):
 
     output_file.parent.mkdir(parents=True, exist_ok=True)
     command = [
-        "ffmpeg", "-y", "-i", str(video_file),
+        # get_ffmpeg_path() : FFmpeg de imageio-ffmpeg (ou FFMPEG_PATH), même sans ffmpeg dans le PATH.
+        get_ffmpeg_path(), "-y", "-i", str(video_file),
         "-vn", "-ac", "1", "-ar", "16000",
         "-c:a", "pcm_s16le", str(output_file),
     ]

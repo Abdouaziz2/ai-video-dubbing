@@ -15,7 +15,8 @@ def test_extract_audio_builds_wav_and_returns_path(tmp_path, monkeypatch):
     output = tmp_path / "intermediate" / "audio.wav"
 
     def fake_run(command, **kwargs):
-        assert command[:4] == ["ffmpeg", "-y", "-i", str(video)]
+        assert "ffmpeg" in command[0]  # chemin de l'exécutable FFmpeg utilisé
+        assert command[1:4] == ["-y", "-i", str(video)]
         assert command[-1] == str(output)
         assert kwargs["check"] is True
         output.parent.mkdir(parents=True, exist_ok=True)
