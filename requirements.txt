@@ -1,6 +1,9 @@
-# Dépendances communes (Mac et Colab).
+# Dépendances Python des modules du projet (Mac et Colab).
 # Sur Colab, torch est déjà installé : `pip install -r requirements.txt` suffit.
 # Sur Mac Intel : utiliser requirements-mac-intel.txt (versions imposées).
+
+# Transcription (Abdou Aziz)
+faster-whisper
 
 # Traduction
 torch>=2.2

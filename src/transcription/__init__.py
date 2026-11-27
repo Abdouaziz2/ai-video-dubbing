@@ -1,0 +1,1 @@
+from .whisper_transcription import transcribe_audio
